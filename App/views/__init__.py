@@ -1,3 +1,4 @@
+# App/views/__init__.py
 # blue prints are imported 
 # explicitly instead of using *
 from .user import user_views

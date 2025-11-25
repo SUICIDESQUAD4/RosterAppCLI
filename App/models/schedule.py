@@ -21,4 +21,3 @@ class Schedule(db.Model):
             "shifts": [shift.get_json() for shift in self.shifts]
         }
 
-

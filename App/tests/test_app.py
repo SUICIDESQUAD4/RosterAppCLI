@@ -1,3 +1,4 @@
+#app/tests/test_app.py
 import os, tempfile, pytest, logging, unittest
 from werkzeug.security import check_password_hash, generate_password_hash
 from App.main import create_app
