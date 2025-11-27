@@ -1,6 +1,6 @@
-from App.controllers.scheduling_logic import ScheduleStrategyFactory, AutoScheduler
+from App.controllers.scheduling_logic import ScheduleStrategyFactory, AutoScheduler as ControllerAutoScheduler
 from datetime import datetime
-from App.models import Admin, Staff, Shift
+from App.models import Admin, Staff, Shift, Schedule
 from App.database import db
 from App.controllers.user import get_user
 
@@ -19,6 +19,11 @@ def generate_auto_schedule(schedule_id: int, method_type: str):
     Returns:
         dict: The result of the scheduling operation.
     """
+    # validate schedule exists
+    schedule = Schedule.query.get(schedule_id)
+    if not schedule:
+        return {"status": "error", "message": f"Schedule with ID {schedule_id} not found"}
+    
     # collect staff and unassigned shift templates for the schedule
     staff_list = Staff.query.all()
     shift_templates = Shift.query.filter_by(schedule_id=schedule_id, staff_id=None).all()
@@ -28,9 +33,7 @@ def generate_auto_schedule(schedule_id: int, method_type: str):
     except ValueError as e:
         return {"status": "error", "message": str(e)}
 
-    scheduler = AutoScheduler(strategy, staff_list, [
-        {"start_time": s.start_time, "end_time": s.end_time} for s in shift_templates
-    ], schedule_id)
+    scheduler = ControllerAutoScheduler(strategy, staff_list, shift_templates, schedule_id)
 
     try:
         result = scheduler.generate_schedule()

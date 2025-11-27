@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from App.models.strategy import ScheduleStrategy
 from App.models.shift import Shift
 from App.models.staff import Staff
@@ -8,10 +8,10 @@ class AutoScheduler:
     The Context class in the Strategy Pattern. It holds a reference to a 
     ScheduleStrategy and delegates the schedule generation task to it.
     """
-    def __init__(self, staff_list: List[Staff], shift_templates: List[Shift]):
-        self._strategy: ScheduleStrategy = None
-        self.staff_list = staff_list
-        self.shift_templates = shift_templates
+    def __init__(self, staff_list: Optional[List[Staff]] = None, shift_templates: Optional[List[Shift]] = None, shifts_to_fill: Optional[List[Shift]] = None, **kwargs):
+        self._strategy: Optional[ScheduleStrategy] = None
+        self.staff_list = staff_list or []
+        self.shift_templates = shift_templates if shift_templates is not None else (shifts_to_fill or [])
 
     def set_strategy(self, strategy: ScheduleStrategy):
         """Sets the concrete strategy to be used for scheduling."""

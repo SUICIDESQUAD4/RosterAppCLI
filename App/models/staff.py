@@ -45,3 +45,8 @@ class Staff(User):
         db.session.commit()
         return shift
 
+    # Provide `shifts` property mapping to shifts for this staff member
+    @property
+    def shifts(self):
+        from App.models.shift import Shift
+        return Shift.query.filter_by(staff_id=self.id).all()

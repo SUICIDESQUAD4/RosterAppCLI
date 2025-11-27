@@ -28,7 +28,7 @@ def loginCLI(username, password):
         db.session.commit()
         return {"message": "Login successful", "token": token}
 
-    return {"message": "Invalid username or password"}
+    return None
 
 def logout(username):
     result = db.session.execute(db.select(User).filter_by(username=username))
