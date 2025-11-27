@@ -40,8 +40,8 @@ class UserUnitTests(unittest.TestCase):
         assert user.username == "pam"
 
     def test_create_user_invalid_role(self):
-        user = create_user("jim", "jimpass","ceo")
-        assert user == None
+        with pytest.raises(ValueError):
+            create_user("jim", "jimpass","ceo")
 
 
     def test_get_json(self):
