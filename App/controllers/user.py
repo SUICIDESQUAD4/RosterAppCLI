@@ -8,8 +8,7 @@ VALID_ROLES = {"user", "staff", "admin"}
 def create_user(username, password, role):
     role = role.lower().strip()
     if role not in VALID_ROLES:
-        print(f"⚠️ Invalid role '{role}'. Must be one of {VALID_ROLES}")
-        return None
+        raise ValueError(f"Invalid role '{role}'. Must be one of {VALID_ROLES}")
     if role == "admin":
         newuser = Admin(username=username, password=password)
     elif role == "staff":

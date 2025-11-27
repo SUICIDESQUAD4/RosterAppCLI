@@ -2,6 +2,7 @@ from App.controllers.scheduling_logic import ScheduleStrategyFactory, AutoSchedu
 from datetime import datetime
 from App.models import Admin, Staff, Shift
 from App.database import db
+from App.controllers.user import get_user
 
 
 def generate_auto_schedule(schedule_id: int, method_type: str):
@@ -43,7 +44,10 @@ def schedule_shift(admin_id: int, staff_id: int, schedule_id: int, start_time, e
 
     This is a thin controller wrapper that persists the Shift.
     """
-    # basic validation could be added (check admin role) in future
+    # enforce admin permission
+    actor = get_user(admin_id)
+    if not actor or actor.role != "admin":
+        raise PermissionError("Only admins can schedule shifts")
     if not staff_id or not schedule_id:
         raise ValueError("staff_id and schedule_id are required")
 
@@ -70,5 +74,9 @@ def get_shift_report(admin_id: int):
     No strict admin checks are enforced here; controllers that call this
     should ensure permissions.
     """
+    actor = get_user(admin_id)
+    if not actor or actor.role != "admin":
+        raise PermissionError("Only admins can view shift reports")
+
     shifts = Shift.query.order_by(Shift.start_time).all()
     return [s.get_json() for s in shifts]
