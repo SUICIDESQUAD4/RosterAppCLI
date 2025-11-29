@@ -36,7 +36,7 @@ def generate_random_templates(schedule_id, num_templates=10):
     db.session.add_all(shifts)
     db.session.commit()
 
-def generate_auto_schedule(schedule_id: int, method_type: str):
+def auto_schedule(schedule_id: int, method_type: str):
     """
     Executes the automatic scheduling logic using the Strategy pattern
     by leveraging the StrategyFactory and AutoScheduler directly in the Controller.

@@ -37,12 +37,12 @@ def createShift():
 @jwt_required()
 def autoSchedule():
     try:
-        admin_id = get_jwt_identity()
         data = request.get_json()
-        scheduleID = data.get("scheduleID") # gets the scheduleID from the request body
-        methodType = data.get("methodType") # gets the scheduleName from the request body
+        scheduleID = data.get("scheduleID")
+        methodType = data.get("methodType")
     
-        return admin.generate_auto_schedule(scheduleID, methodType) # Call controller method
+        return admin.auto_schedule(scheduleID, methodType)
+    
     except (PermissionError, ValueError) as e:
         return jsonify({"error": str(e)}), 403
     except SQLAlchemyError:
