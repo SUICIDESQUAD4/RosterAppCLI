@@ -1,4 +1,3 @@
-# App/controllers/staff.py
 from App.models import Shift
 from App.database import db
 from datetime import datetime

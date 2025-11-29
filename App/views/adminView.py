@@ -1,4 +1,3 @@
-# app/views/staff_views.py
 from flask import Blueprint, jsonify, request
 from datetime import datetime
 from App.controllers import staff, auth, admin
@@ -13,12 +12,11 @@ def createShift():
     try:
         admin_id = get_jwt_identity()
         data = request.get_json()
-        scheduleID = data.get("scheduleID") # gets the scheduleID from the request body
-        staffID = data.get("staffID") # gets the staffID from the request body
-        startTime = data.get("start_time") # gets the startTime from the request body
-        endTime = data.get("end_time") # gets the endTime from the request body
+        scheduleID = data.get("scheduleID")
+        staffID = data.get("staffID")
+        startTime = data.get("start_time")
+        endTime = data.get("end_time")
 
-    # Try ISO first, fallback to "YYYY-MM-DD HH:MM:SS"
         try:
             start_time = datetime.fromisoformat(startTime)
             end_time = datetime.fromisoformat(endTime)

@@ -3,8 +3,6 @@ from App.database import db
 
 class Shift(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    # staff_id is nullable because the Strategy Pattern needs to create shifts 
-    # as unassigned templates first.
     staff_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True) 
     schedule_id = db.Column(db.Integer, db.ForeignKey("schedule.id"), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
@@ -12,7 +10,6 @@ class Shift(db.Model):
     clock_in = db.Column(db.DateTime, nullable=True)
     clock_out = db.Column(db.DateTime, nullable=True)
 
-    # Renamed backref for clarity to avoid collision if Staff had other relationships
     staff = db.relationship("Staff", backref="scheduled_shifts", foreign_keys=[staff_id]) 
 
     def get_json(self):

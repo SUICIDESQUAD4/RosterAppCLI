@@ -8,11 +8,6 @@ from App.controllers.user import get_user
 
 
 def random_shift_time(start_hour=6, end_hour=22, min_duration=4, max_duration=8):
-    """
-    Generate a random start and end time between the given hour range.
-    Duration in hours is random between min_duration and max_duration.
-    Returns datetime objects.
-    """
     day = datetime.now().date()
 
     start = datetime.combine(day, datetime.min.time()) + timedelta(hours=random.randint(start_hour, end_hour - min_duration))
@@ -38,22 +33,6 @@ def generate_random_templates(schedule_id, num_templates=10):
     db.session.commit()
 
 def auto_schedule(schedule_id: int, method_type: str):
-    """
-    Executes the automatic scheduling logic using the Strategy pattern
-    by leveraging the StrategyFactory and AutoScheduler directly in the Controller.
-
-    The logic now flows: Controller -> StrategyFactory (select strategy) -> AutoScheduler (execute strategy).
-
-    Args:
-        schedule_id (str): The ID of the schedule to be processed.
-        method_type (str): The strategy to use (e.g., 'priority', 'random').
-
-    Returns:
-        dict: The result of the scheduling operation.
-    """
-    # collect staff and unassigned shift templates for the schedule
-    
-    
     staff_list = Staff.query.all()
     
     generate_random_templates(schedule_id, num_templates=10)
@@ -75,11 +54,6 @@ def auto_schedule(schedule_id: int, method_type: str):
 
 
 def schedule_shift(admin_id: int, staff_id: int, schedule_id: int, start_time, end_time):
-    """Create a shift under a schedule assigned to a staff member.
-
-    This is a thin controller wrapper that persists the Shift.
-    """
-    # enforce admin permission
     actor = get_user(admin_id)
     if not actor or actor.role != "admin":
         raise PermissionError("Only admins can schedule shifts")
@@ -104,11 +78,6 @@ def schedule_shift(admin_id: int, staff_id: int, schedule_id: int, start_time, e
 
 
 def get_shift_report(admin_id: int):
-    """Return all shifts (simple report) for an admin dashboard.
-
-    No strict admin checks are enforced here; controllers that call this
-    should ensure permissions.
-    """
     actor = get_user(admin_id)
     if not actor or actor.role != "admin":
         raise PermissionError("Only admins can view shift reports")

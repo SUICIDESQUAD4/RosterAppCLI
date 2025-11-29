@@ -1,4 +1,3 @@
-# app/views/admin.py
 from flask_admin.contrib.sqla import ModelView
 from flask_jwt_extended import jwt_required, current_user, unset_jwt_cookies, set_access_cookies
 from flask_admin import Admin
@@ -13,7 +12,6 @@ class AdminView(ModelView):
         return current_user is not None
 
     def inaccessible_callback(self, name, **kwargs):
-        # redirect to login page if user doesn't have access
         flash("Login to access admin")
         return redirect(url_for('index_page', next=request.url))
 

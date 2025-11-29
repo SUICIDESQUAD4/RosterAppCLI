@@ -11,15 +11,12 @@ class Staff(User):
     def __init__(self, username, password):
         super().__init__(username, password, "staff")
 
-    # UML: viewRoster()
     def view_roster(self):
-        """Return the roster (list of shifts) assigned to this staff member."""
         from App.models.shift import Shift
 
         shifts = Shift.query.filter_by(staff_id=self.id).all()
         return [s.get_json() for s in shifts]
 
-    # UML: clockIn()
     def clock_in(self, shift_id: int):
         from datetime import datetime
         from App.models.shift import Shift
@@ -32,7 +29,6 @@ class Staff(User):
         db.session.commit()
         return shift
 
-    # UML: clockOut()
     def clock_out(self, shift_id: int):
         from datetime import datetime
         from App.models.shift import Shift
