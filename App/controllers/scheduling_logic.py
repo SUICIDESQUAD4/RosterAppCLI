@@ -92,6 +92,11 @@ class BalancedShift(ScheduleStrategy):
     def generate(self, staff_list: list[Staff], schedule_templates: list[dict], schedule_id: int) -> list[Shift]:
         new_shifts = []
         if not staff_list or not schedule_templates:
+            if not staff_list:
+                print("no staff")
+            if not schedule_templates:
+                print("no templates")
+                
             return new_shifts
 
         # Initialize total hours tracker {staff_id: total_hours}
@@ -142,7 +147,7 @@ class AutoScheduler:
     """
     The Context class in the Strategy Pattern. Executes the schedule generation.
     """
-    def _init_(self, strategy: ScheduleStrategy, staff_list: list[Staff], schedule_templates: list[dict], schedule_id: int):
+    def __init__(self, strategy: ScheduleStrategy, staff_list: list[Staff], schedule_templates: list[dict], schedule_id: int):
         self._strategy = strategy
         self._staff_list = staff_list
         self._schedule_templates = schedule_templates
