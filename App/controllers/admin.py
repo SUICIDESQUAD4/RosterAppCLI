@@ -1,4 +1,5 @@
-from App.controllers.scheduling_logic import ScheduleStrategyFactory, AutoScheduler
+from App.models.strategy import ScheduleStrategyFactory
+from App.models.auto_scheduler import AutoScheduler 
 from datetime import datetime, timedelta
 import random
 from App.models import Admin, Staff, Shift

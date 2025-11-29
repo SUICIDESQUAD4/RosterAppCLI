@@ -6,7 +6,7 @@ from App.models.shift import Shift
 from App.models.auto_scheduler import AutoScheduler 
 from App.models.strategy import (
     ScheduleStrategy,
-    EvenDistributionStrategy,
-    MinimalDaysStrategy,
-    BalancedShiftStrategy
+    EvenDistribution,
+    MinimalDays,
+    BalancedShift
 )
