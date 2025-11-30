@@ -3,27 +3,14 @@ from App.controllers import staff, auth
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 
-staff_views = Blueprint('staff_views', __name__, template_folder='../templates')
+staff_views = Blueprint('staff_views', __name__, url_prefix='/api/staff')
 
-@staff_views.route('/staff/roster', methods=['GET'])
+@staff_views.route('/roster', methods=['GET'])
 @jwt_required()
 def view_roster():
     try:
         staff_id = get_jwt_identity()
-        roster = staff.get_combined_roster(staff_id)
-    except SQLAlchemyError:
-        return jsonify({"error": "Database error"}), 500
-
-@staff_views.route('/staff/shift', methods=['GET'])
-@jwt_required()
-def view_shift():
-    try:
-        data = request.get_json()
-        shift_id = data.get("shiftID")
-        shift = staff.get_shift(shift_id)
-        if not shift:
-            return jsonify({"error": "Shift not found"}), 404
-        return jsonify(shift.get_json()), 200
+        return staff.get_combined_roster(staff_id)
     except SQLAlchemyError:
         return jsonify({"error": "Database error"}), 500
 

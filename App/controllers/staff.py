@@ -7,7 +7,7 @@ def get_combined_roster(staff_id):
     staff = get_user(staff_id)
     if not staff or staff.role != "staff":
         raise PermissionError("Only staff can view roster")
-    return [shift.get_json() for shift in Shift.query.order_by(Shift.start_time).all()]
+    return [shift.get_json() for shift in Shift.query.filter_by(staff_id=staff_id).all()]
 
 
 def clock_in(staff_id, shift_id):
