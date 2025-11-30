@@ -14,7 +14,7 @@ def view_roster():
     except SQLAlchemyError:
         return jsonify({"error": "Database error"}), 500
 
-@staff_views.route('/staff/clock_in', methods=['POST'])
+@staff_views.route('/clock_in', methods=['POST'])
 @jwt_required()
 def clockIn():
     try:
@@ -29,7 +29,7 @@ def clockIn():
         return jsonify({"error": "Database error"}), 500
 
 
-@staff_views.route('/staff/clock_out/', methods=['POST'])
+@staff_views.route('/clock_out', methods=['POST'])
 @jwt_required()
 def clock_out():
     try:
