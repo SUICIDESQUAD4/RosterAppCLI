@@ -47,13 +47,26 @@ def autoSchedule():
         return jsonify({"error": "Database error"}), 500
 
 
-@admin_view.route('/viewShift', methods=['GET'])
+@admin_view.route('/viewSchedule', methods=['GET'])
 @jwt_required()
-def viewShift():
+def viewSchedule():
     try:
         admin_id = get_jwt_identity()
         report = admin.get_shift_report(admin_id)
         return jsonify(report), 200
+    except (PermissionError, ValueError) as e:
+        return jsonify({"error": str(e)}), 403
+    except SQLAlchemyError:
+        return jsonify({"error": "Database error"}), 500
+    
+@admin_view.route('/viewShift', methods=['GET'])
+@jwt_required()
+def viewShift():
+    try:
+        data = request.get_json()
+        shift_id = data.get("shiftID")
+        shift = admin.viewShift(shift_id)
+        return jsonify(shift), 200
     except (PermissionError, ValueError) as e:
         return jsonify({"error": str(e)}), 403
     except SQLAlchemyError:

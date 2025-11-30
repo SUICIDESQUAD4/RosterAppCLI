@@ -84,3 +84,9 @@ def get_shift_report(admin_id: int):
 
     shifts = Shift.query.order_by(Shift.start_time).all()
     return [s.get_json() for s in shifts]
+
+def viewShift(shift_id: int):
+    shift = Shift.query.get(shift_id)
+    if not shift:
+        raise ValueError("Shift not found")
+    return shift.get_json()
