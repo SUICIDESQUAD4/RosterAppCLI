@@ -12,13 +12,13 @@ class User(db.Model):
     __mapper_args__ = {
         "polymorphic_identity": "user",
         "polymorphic_on": "role"
-    }   
+    } 
     
     def __init__(self, username, password, role="user"):
         self.username = username
         self.role = role
         self.set_password(password)
-
+    
     def get_json(self):
         return {
             'id': self.id,
@@ -31,5 +31,4 @@ class User(db.Model):
     
     def check_password(self, password):
         return check_password_hash(self.password, password)
-
-
+    
