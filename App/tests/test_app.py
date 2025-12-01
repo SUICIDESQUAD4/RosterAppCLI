@@ -14,7 +14,6 @@ from App.models import User, Admin, Staff, Schedule, Shift
 from App.models.auto_scheduler import AutoScheduler as ModelAutoScheduler
 from App.models.strategy import EvenDistributionStrategy, MinimalDaysStrategy, BalancedShiftStrategy
 
-
 # --- FIXTURES ---
 
 @pytest.fixture(scope='session', autouse=True)
