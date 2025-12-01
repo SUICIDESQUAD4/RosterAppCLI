@@ -2,7 +2,7 @@ from App.models.strategy import ScheduleStrategyFactory
 from App.models.auto_scheduler import AutoScheduler 
 from datetime import datetime, timedelta
 import random
-from App.models import Admin, Staff, Shift
+from App.models import Admin, Staff, Shift, Schedule
 from App.database import db
 from App.controllers.user import get_user
 
@@ -33,9 +33,17 @@ def generate_random_templates(schedule_id, num_templates=10):
     db.session.commit()
 
 def auto_schedule(schedule_id: int, method_type: str):
+    schedule = Schedule.query.filter_by(id=schedule_id).first()
+    if not schedule:
+        return {"status": "error", "message": "Schedule not found"}
+    
     staff_list = Staff.query.all()
     
-    generate_random_templates(schedule_id, num_templates=10)
+    num = staff_list.__len__()
+    if num == 0:
+        return {"status": "error", "message": "No staff available for scheduling"}
+    
+    generate_random_templates(schedule_id, num_templates=num)
     
     shift_templates = Shift.query.filter_by(schedule_id=schedule_id, staff_id=None).all()
 
@@ -44,7 +52,7 @@ def auto_schedule(schedule_id: int, method_type: str):
     except ValueError as e:
         return {"status": "error", "message": str(e)}
     
-    scheduler = AutoScheduler(strategy, staff_list, [{"start_time": s.start_time, "end_time": s.end_time} for s in shift_templates], schedule_id)
+    scheduler = AutoScheduler(strategy, staff_list, shift_templates, schedule_id)
     result = scheduler.generate_schedule()
     
     try:

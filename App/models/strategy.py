@@ -19,24 +19,26 @@ class ScheduleStrategy(abc.ABC):
         pass
 
 class EvenDistribution(ScheduleStrategy):
-    def generate(self, staff_list: list[Staff], schedule_templates: list[dict], schedule_id: int) -> list[Shift]:
+    def generate(self, staff_list, schedule_templates, schedule_id):
         new_shifts = []
         if not staff_list or not schedule_templates:
             return new_shifts
 
         num_staff = len(staff_list)
-        
+
         for i, template in enumerate(schedule_templates):
             staff_index = i % num_staff
             staff_id = staff_list[staff_index].id
-            
+
+            start = getattr(template, 'start_time', None) or template['start_time']
+            end = getattr(template, 'end_time', None) or template['end_time']
+
             new_shifts.append(Shift(
                 staff_id=staff_id,
                 schedule_id=schedule_id,
-                start_time=template['start_time'],
-                end_time=template['end_time']
+                start_time=start,
+                end_time=end,
             ))
-        
         return new_shifts
 
 class MinimalDays(ScheduleStrategy):
@@ -50,11 +52,14 @@ class MinimalDays(ScheduleStrategy):
         for template in schedule_templates:
             staff_id_to_assign = min(staff_shift_counts, key=staff_shift_counts.get)
             
+            start = getattr(template, 'start_time', None) or template['start_time']
+            end = getattr(template, 'end_time', None) or template['end_time']
+            
             new_shifts.append(Shift(
                 staff_id=staff_id_to_assign,
                 schedule_id=schedule_id,
-                start_time=template['start_time'],
-                end_time=template['end_time']
+                start_time=start,
+                end_time=end
             ))
             
             staff_shift_counts[staff_id_to_assign] += 1
@@ -75,15 +80,18 @@ class BalancedShift(ScheduleStrategy):
         staff_hour_totals = {staff.id: 0.0 for staff in staff_list}
 
         for template in schedule_templates:
-            duration = calculate_duration_hours(template['start_time'], template['end_time']) 
+            start = getattr(template, 'start_time', None) or template['start_time']
+            end = getattr(template, 'end_time', None) or template['end_time']
+            
+            duration = calculate_duration_hours(start, end) 
             
             staff_id_to_assign = min(staff_hour_totals, key=staff_hour_totals.get)
             
             new_shifts.append(Shift(
                 staff_id=staff_id_to_assign,
                 schedule_id=schedule_id,
-                start_time=template['start_time'],
-                end_time=template['end_time']
+                start_time=start,
+                end_time=end
             ))
             
             staff_hour_totals[staff_id_to_assign] += duration

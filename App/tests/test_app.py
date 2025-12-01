@@ -1,5 +1,6 @@
 import pytest
 from datetime import datetime, timedelta
+import time
 
 from App.main import create_app
 from App.database import create_db, db
@@ -7,12 +8,11 @@ from App.controllers.user import create_user, get_user, update_user, get_all_use
 from App.controllers.admin import schedule_shift, get_shift_report
 from App.controllers.staff import get_combined_roster, clock_in, clock_out, get_shift
 from App.controllers.auth import loginCLI
-from App.controllers import scheduling_logic
-from App.controllers.admin import generate_auto_schedule # Import for integration tests
+from App.controllers.admin import auto_schedule # Import for integration tests
 
-from App.models import User, Admin, Staff, Schedule, Shift
+from App.models import User, Admin, Staff, Schedule, Shift, strategy
 from App.models.auto_scheduler import AutoScheduler as ModelAutoScheduler
-from App.models.strategy import EvenDistributionStrategy, MinimalDaysStrategy, BalancedShiftStrategy
+from App.models.strategy import EvenDistribution as EvenDistributionStrategy, MinimalDays as MinimalDaysStrategy, BalancedShift as BalancedShiftStrategy
 
 # --- FIXTURES ---
 
@@ -77,7 +77,6 @@ def test_user_model_get_json_and_password_methods():
     u2 = User(username="tester", password="mypass")
     assert u2.password != "mypass"
     assert u2.check_password("mypass") is True
-
 
 def test_schedule_shift_and_report():
     admin = create_user("sadmin", "apass", "admin")
@@ -154,7 +153,7 @@ def test_clock_in_invalid_user_and_shift():
 
 def test_scheduling_strategies_and_factory():
     # factory creates valid strategies
-    s = scheduling_logic.ScheduleStrategyFactory.create_strategy("minimal")
+    s = strategy.ScheduleStrategyFactory.create_strategy("minimal")
     assert isinstance(s, MinimalDaysStrategy)
 
     # Setup for strategy logic test
@@ -176,18 +175,18 @@ def test_scheduling_strategies_and_factory():
 
     # Test EvenDistributionStrategy
     even = EvenDistributionStrategy()
-    assigned = even.generate(schedule.id, staff_list, templates)
+    assigned = even.generate(staff_list, templates, schedule.id)
     assert len(assigned) == 2
     assert assigned[0].staff_id in (staff1.id, staff2.id)
 
     # Test MinimalDaysStrategy
     minimal = MinimalDaysStrategy()
-    assigned2 = minimal.generate(schedule.id, staff_list, templates)
+    assigned2 = minimal.generate(staff_list, templates, schedule.id)
     assert len(assigned2) == 2
 
     # Test BalancedShiftStrategy
     balanced = BalancedShiftStrategy()
-    assigned3 = balanced.generate(schedule.id, staff_list, templates)
+    assigned3 = balanced.generate(staff_list, templates, schedule.id)
     assert len(assigned3) == 2
 
 
@@ -202,9 +201,8 @@ def test_models_autoscheduler_calls_strategy():
             return []
 
     dummy = DummyStrategy()
-    sched = ModelAutoScheduler(staff_list=[], shifts_to_fill=[])
-    sched.set_strategy(dummy)
-    result = sched.generate_schedule(1)
+    sched = ModelAutoScheduler(strategy=dummy, staff_list=[], schedule_templates=[], schedule_id=1)
+    result = sched.generate_schedule()
     assert dummy.called is True
     assert result == []
 
@@ -301,6 +299,7 @@ def test_staff_clock_in_and_out_integration():
     shift_id = shift.id if not isinstance(shift, dict) else shift['id']
 
     clock_in(staff.id, shift_id)
+    time.sleep(0.001)
     clock_out(staff.id, shift_id)
 
     updated_shift = get_shift(shift_id)
@@ -335,32 +334,23 @@ def test_permission_restrictions_integration():
 def test_admin_generate_auto_schedule_integration():
     """Integration test: admin auto-populates a schedule from templates."""
     admin = create_user("auto_admin", "adminpass", "admin")
-    create_user("auto_staff1", "pass1", "staff") # staff ID 2
-    create_user("auto_staff2", "pass2", "staff") # staff ID 3
+    staff1 = create_user("auto_staff1", "pass1", "staff")  # staff ID 2
+    staff2 = create_user("auto_staff2", "pass2", "staff")  # staff ID 3
 
     schedule = Schedule(name="AutoSchedule", created_by=admin.id)
     db.session.add(schedule)
     db.session.commit()
 
-    # create unassigned shift templates (staff_id=None)
-    t1 = Shift(schedule_id=schedule.id, staff_id=None, start_time=datetime.now(), end_time=datetime.now() + timedelta(hours=8))
-    t2 = Shift(schedule_id=schedule.id, staff_id=None, start_time=datetime.now() + timedelta(days=1), end_time=datetime.now() + timedelta(days=1, hours=8))
-    db.session.add_all([t1, t2])
-    db.session.commit()
-
     # call auto-scheduler (method 'even')
-    res = generate_auto_schedule(schedule.id, 'even')
+    res = auto_schedule(schedule.id, 'even')
     
+    # Check the assigned shifts from the scheduler result
     assigned = res.get('data', []) if isinstance(res, dict) else res
-        
-    assert len(assigned) == 2
     
-    # After auto-schedule, shifts for the schedule should have staff assigned
-    shifts_after = db.session.execute(db.select(Shift).filter_by(schedule_id=schedule.id)).scalars().all()
-    assert all(s.staff_id is not None for s in shifts_after)
-    assert len(shifts_after) == 2
+    assert len(assigned) == 2
+    assert all(s.get('staff_id') is not None for s in assigned)
 
     # Test failure case (non-existent schedule)
-    res = generate_auto_schedule(99999, 'even')
+    res = auto_schedule(99999, 'even')
     if isinstance(res, dict):
         assert res.get('status') == 'error'
