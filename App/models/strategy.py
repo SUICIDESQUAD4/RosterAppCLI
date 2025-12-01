@@ -1,81 +1,107 @@
-from abc import ABC, abstractmethod
-from typing import List
-from App.models.shift import Shift
-from App.models.staff import Staff # Use the concrete Staff model for type hinting
+import abc
+from datetime import datetime
+from App.database import db
+from App.models.staff import Staff
+from App.models.shift import Shift 
 
-# The Strategy Interface (Defines the contract for all scheduling algorithms)
-class ScheduleStrategy(ABC):
-    """Abstract Base Class for all scheduling strategies."""
+def calculate_duration_hours(start_time_str, end_time_str):
+    try:
+        start = datetime.strptime(start_time_str, '%Y-%m-%d %H:%M:%S')
+        end = datetime.strptime(end_time_str, '%Y-%m-%d %H:%M:%S')
+        duration = end - start
+        return duration.total_seconds() / 3600
+    except Exception:
+        return 0.0
 
-    @abstractmethod
-    def generate(self, schedule_id: int, staff_list: List[Staff], shifts_to_fill: List[Shift]) -> List[Shift]:
-        """
-        Generates a list of assigned shifts based on the specific strategy logic.
-        
-        :param schedule_id: The ID of the schedule being generated.
-        :param staff_list: List of available staff members.
-        :param shifts_to_fill: List of unassigned Shift templates (start/end times).
-        :return: List of completed Shift objects with staff_id assigned.
-        """
+class ScheduleStrategy(abc.ABC):
+    @abc.abstractmethod
+    def generate(self, staff_list: list[Staff], schedule_templates: list[dict], schedule_id: int) -> list[Shift]:
         pass
 
-# Concrete Strategy 1: Evenly Distribute Shifts
-class EvenDistributionStrategy(ScheduleStrategy):
-    """
-    Distributes shifts among staff as evenly as possible based on shift count.
-    """
-    def generate(self, schedule_id: int, staff_list: List[Staff], shifts_to_fill: List[Shift]) -> List[Shift]:
-        print(f"Applying Even Distribution Strategy for Schedule {schedule_id}...")
-        assigned_shifts = []
-        
-        # Simple round-robin assignment placeholder for model definition:
-        staff_count = len(staff_list)
-        if staff_count > 0:
-            for i, shift in enumerate(shifts_to_fill):
-                staff_member = staff_list[i % staff_count]
-                shift.staff_id = staff_member.id
-                shift.schedule_id = schedule_id
-                assigned_shifts.append(shift)
-        
-        return assigned_shifts
+class EvenDistribution(ScheduleStrategy):
+    def generate(self, staff_list: list[Staff], schedule_templates: list[dict], schedule_id: int) -> list[Shift]:
+        new_shifts = []
+        if not staff_list or not schedule_templates:
+            return new_shifts
 
-# Concrete Strategy 2: Minimize Working Days
-class MinimalDaysStrategy(ScheduleStrategy):
-    """
-    Distributes shifts to minimize the total number of working days per staff member.
-    """
-    def generate(self, schedule_id: int, staff_list: List[Staff], shifts_to_fill: List[Shift]) -> List[Shift]:
-        print(f"Applying Minimal Days Strategy for Schedule {schedule_id}...")
-        assigned_shifts = []
+        num_staff = len(staff_list)
         
-        # Simple round-robin assignment placeholder:
-        staff_count = len(staff_list)
-        if staff_count > 0:
-            for i, shift in enumerate(shifts_to_fill):
-                staff_member = staff_list[i % staff_count]
-                shift.staff_id = staff_member.id
-                shift.schedule_id = schedule_id
-                assigned_shifts.append(shift)
-
-        return assigned_shifts
-
-# Concrete Strategy 3: Balance Day/Night Shifts
-class BalancedShiftStrategy(ScheduleStrategy):
-    """
-    Distributes shifts to ensure a balance of day and night shifts per staff member.
-    """
-    def generate(self, schedule_id: int, staff_list: List[Staff], shifts_to_fill: List[Shift]) -> List[Shift]:
-        print(f"Applying Balanced Shift Strategy for Schedule {schedule_id}...")
-        assigned_shifts = []
+        for i, template in enumerate(schedule_templates):
+            staff_index = i % num_staff
+            staff_id = staff_list[staff_index].id
+            
+            new_shifts.append(Shift(
+                staff_id=staff_id,
+                schedule_id=schedule_id,
+                start_time=template['start_time'],
+                end_time=template['end_time']
+            ))
         
-        # Simple round-robin assignment placeholder:
-        staff_count = len(staff_list)
-        if staff_count > 0:
-            for i, shift in enumerate(shifts_to_fill):
-                staff_member = staff_list[i % staff_count]
-                shift.staff_id = staff_member.id
-                shift.schedule_id = schedule_id
-                assigned_shifts.append(shift)
+        return new_shifts
 
-        return assigned_shifts
-    
+class MinimalDays(ScheduleStrategy):
+    def generate(self, staff_list: list[Staff], schedule_templates: list[dict], schedule_id: int) -> list[Shift]:
+        new_shifts = []
+        if not staff_list or not schedule_templates:
+            return new_shifts
+
+        staff_shift_counts = {staff.id: 0 for staff in staff_list}
+
+        for template in schedule_templates:
+            staff_id_to_assign = min(staff_shift_counts, key=staff_shift_counts.get)
+            
+            new_shifts.append(Shift(
+                staff_id=staff_id_to_assign,
+                schedule_id=schedule_id,
+                start_time=template['start_time'],
+                end_time=template['end_time']
+            ))
+            
+            staff_shift_counts[staff_id_to_assign] += 1
+            
+        return new_shifts
+
+class BalancedShift(ScheduleStrategy):
+    def generate(self, staff_list: list[Staff], schedule_templates: list[dict], schedule_id: int) -> list[Shift]:
+        new_shifts = []
+        if not staff_list or not schedule_templates:
+            if not staff_list:
+                print("no staff")
+            if not schedule_templates:
+                print("no templates")
+                
+            return new_shifts
+
+        staff_hour_totals = {staff.id: 0.0 for staff in staff_list}
+
+        for template in schedule_templates:
+            duration = calculate_duration_hours(template['start_time'], template['end_time']) 
+            
+            staff_id_to_assign = min(staff_hour_totals, key=staff_hour_totals.get)
+            
+            new_shifts.append(Shift(
+                staff_id=staff_id_to_assign,
+                schedule_id=schedule_id,
+                start_time=template['start_time'],
+                end_time=template['end_time']
+            ))
+            
+            staff_hour_totals[staff_id_to_assign] += duration
+            
+        return new_shifts
+class ScheduleStrategyFactory:
+    STRATEGY_MAP = {
+        'even': EvenDistribution,
+        'minimal': MinimalDays,
+        'balanced': BalancedShift
+    }
+
+    @staticmethod
+    def create_strategy(method_type: str) -> ScheduleStrategy:
+        method_type = method_type.lower().strip()
+        strategy_class = ScheduleStrategyFactory.STRATEGY_MAP.get(method_type)
+        
+        if not strategy_class:
+            raise ValueError(f"Invalid scheduling method type: {method_type}. Must be one of {list(ScheduleStrategyFactory.STRATEGY_MAP.keys())}")
+        
+        return strategy_class()

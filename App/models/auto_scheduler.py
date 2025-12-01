@@ -1,39 +1,29 @@
-from typing import List, Optional
-from App.models.strategy import ScheduleStrategy
-from App.models.shift import Shift
+import abc
+from datetime import datetime
+from App.database import db
 from App.models.staff import Staff
+from App.models.shift import Shift
+from App.models.strategy import ScheduleStrategy, EvenDistribution, MinimalDays, BalancedShift
 
 class AutoScheduler:
-    """
-    The Context class in the Strategy Pattern. It holds a reference to a 
-    ScheduleStrategy and delegates the schedule generation task to it.
-    """
-    def __init__(self, staff_list: Optional[List[Staff]] = None, shift_templates: Optional[List[Shift]] = None, shifts_to_fill: Optional[List[Shift]] = None, **kwargs):
-        self._strategy: Optional[ScheduleStrategy] = None
-        self.staff_list = staff_list or []
-        self.shift_templates = shift_templates if shift_templates is not None else (shifts_to_fill or [])
-
-    def set_strategy(self, strategy: ScheduleStrategy):
-        """Sets the concrete strategy to be used for scheduling."""
+    def __init__(self, strategy: ScheduleStrategy, staff_list: list[Staff], schedule_templates: list[dict], schedule_id: int):
         self._strategy = strategy
+        self._staff_list = staff_list
+        self._schedule_templates = schedule_templates
+        self._schedule_id = schedule_id
 
-    def generate_schedule(self, schedule_id: int) -> List[Shift]:
-        """
-        Executes the chosen strategy to generate the schedule.
-        
-        It is the controller/service layer's responsibility to set the correct 
-        strategy before calling this method.
-        """
-        if not self._strategy:
-            raise ValueError("Scheduling strategy must be set before generating a schedule.")
-        
-        # Delegate the actual generation to the concrete strategy
-        assigned_shifts = self._strategy.generate(
-            schedule_id, 
-            self.staff_list, 
-            self.shift_templates
+    def generate_schedule(self) -> list[dict]:
+        new_shifts = self._strategy.generate(
+            self._staff_list, 
+            self._schedule_templates, 
+            self._schedule_id
         )
-        return assigned_shifts
+        
+        self.save_schedule(new_shifts)
+        
+        return [s.get_json() for s in new_shifts]
 
-    # NOTE: The saveSchedule() method from the UML will be implemented in the 
-    # service/controller layer to handle database commit logic.
+    def save_schedule(self, shifts_to_save: list[Shift]):
+        if shifts_to_save:
+            db.session.add_all(shifts_to_save)
+            db.session.commit()
