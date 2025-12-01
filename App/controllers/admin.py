@@ -16,7 +16,7 @@ def random_shift_time(start_hour=6, end_hour=22, min_duration=4, max_duration=8)
 
     return start, end
 
-def generate_random_templates(schedule_id, num_templates=10):
+def generate_random_templates(schedule_id, num_templates):
     shifts = []
 
     for _ in range(num_templates):
@@ -29,10 +29,10 @@ def generate_random_templates(schedule_id, num_templates=10):
         )
         shifts.append(shift)
 
-    db.session.add_all(shifts)
-    db.session.commit()
+    return shifts
 
 def auto_schedule(schedule_id: int, method_type: str):
+    print(Schedule.query.all())
     schedule = Schedule.query.filter_by(id=schedule_id).first()
     if not schedule:
         return {"status": "error", "message": "Schedule not found"}
@@ -43,9 +43,9 @@ def auto_schedule(schedule_id: int, method_type: str):
     if num == 0:
         return {"status": "error", "message": "No staff available for scheduling"}
     
-    generate_random_templates(schedule_id, num_templates=num)
+    shift_templates = generate_random_templates(schedule_id, num_templates=num)
     
-    shift_templates = Shift.query.filter_by(schedule_id=schedule_id, staff_id=None).all()
+    print(shift_templates)
 
     try:
         strategy = ScheduleStrategyFactory.create_strategy(method_type)
@@ -73,14 +73,15 @@ def schedule_shift(admin_id: int, staff_id: int, schedule_id: int, start_time, e
         start_time = datetime.fromisoformat(start_time)
     if isinstance(end_time, str):
         end_time = datetime.fromisoformat(end_time)
-
-    shift = Shift(
-        staff_id=staff_id,
-        schedule_id=schedule_id,
-        start_time=start_time,
-        end_time=end_time,
-    )
+        
+    shift = Shift(staff_id=staff_id, schedule_id=schedule_id, start_time=start_time, end_time=end_time)
+    
     db.session.add(shift)
+    db.session.commit()
+    
+    schedule = Schedule(created_by=admin_id, admin_id=admin_id, staff_id=None, name=f"Schedule_{schedule_id}_{datetime.utcnow().isoformat()}")
+    
+    db.session.add(schedule)
     db.session.commit()
     return shift.get_json()
 

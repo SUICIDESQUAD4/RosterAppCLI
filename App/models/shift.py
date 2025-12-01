@@ -1,5 +1,6 @@
 from datetime import datetime
 from App.database import db
+from App.models.staff import Staff
 
 class Shift(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -9,8 +10,7 @@ class Shift(db.Model):
     end_time = db.Column(db.DateTime, nullable=False)
     clock_in = db.Column(db.DateTime, nullable=True)
     clock_out = db.Column(db.DateTime, nullable=True)
-
-    staff = db.relationship("Staff", backref="scheduled_shifts", foreign_keys=[staff_id]) 
+    staff = db.relationship("Staff", backref="scheduled_shifts", foreign_keys=[staff_id])
 
     def get_json(self):
         return {

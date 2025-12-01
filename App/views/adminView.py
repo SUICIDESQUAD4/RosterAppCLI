@@ -27,8 +27,6 @@ def createShift():
         return admin.schedule_shift(admin_id, staffID, scheduleID, start_time, end_time), 200
     except (PermissionError, ValueError) as e:
         return jsonify({"error": str(e)}), 403
-    except SQLAlchemyError:
-        return jsonify({"error": "Database error"}), 500
     
     
 @admin_view.route('/autoSchedule', methods=['POST'])
@@ -43,9 +41,6 @@ def autoSchedule():
     
     except (PermissionError, ValueError) as e:
         return jsonify({"error": str(e)}), 403
-    except SQLAlchemyError:
-        return jsonify({"error": "Database error"}), 500
-
 
 @admin_view.route('/viewSchedule', methods=['GET'])
 @jwt_required()
@@ -56,10 +51,8 @@ def viewSchedule():
         return jsonify(report), 200
     except (PermissionError, ValueError) as e:
         return jsonify({"error": str(e)}), 403
-    except SQLAlchemyError:
-        return jsonify({"error": "Database error"}), 500
     
-@admin_view.route('/viewShift', methods=['GET'])
+@admin_view.route('/viewShift', methods=['POST'])
 @jwt_required()
 def viewShift():
     try:
@@ -69,5 +62,3 @@ def viewShift():
         return jsonify(shift), 200
     except (PermissionError, ValueError) as e:
         return jsonify({"error": str(e)}), 403
-    except SQLAlchemyError:
-        return jsonify({"error": "Database error"}), 500
