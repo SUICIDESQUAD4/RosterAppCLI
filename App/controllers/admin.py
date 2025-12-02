@@ -32,7 +32,6 @@ def generate_random_templates(schedule_id, num_templates):
     return shifts
 
 def auto_schedule(schedule_id: int, method_type: str):
-    print(Schedule.query.all())
     schedule = Schedule.query.filter_by(id=schedule_id).first()
     if not schedule:
         return {"status": "error", "message": "Schedule not found"}
