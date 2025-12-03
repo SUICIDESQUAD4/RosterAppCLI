@@ -34,8 +34,14 @@ def createShift():
 def autoSchedule():
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({"error": "Missing JSON body"}), 400
         scheduleID = data.get("scheduleID")
         methodType = data.get("methodType")
+        if not scheduleID:
+            return jsonify({"error": "Missing required field: scheduleID"}), 400
+        if not methodType:
+            return jsonify({"error": "Missing required field: methodType"}), 400
     
         return admin.auto_schedule(scheduleID, methodType)
     
