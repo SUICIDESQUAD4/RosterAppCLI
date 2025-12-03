@@ -1,3 +1,21 @@
+services:
+  - type: web
+    name: rosterappcli
+    env: python
+    plan: free
+    repo: https://github.com/SUICIDESQUAD4/RosterAppCLI
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers ${WORKERS:-2}
+    autoDeploy: true
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: 'False'
+      - key: PYTHONUNBUFFERED
+        value: '1'
+      # Note: Do NOT include secrets here. Use the Render dashboard to add secret environment variables.
 
 services:
 - type: web
