@@ -15,7 +15,8 @@ services:
         value: 'False'
       - key: PYTHONUNBUFFERED
         value: '1'
-      # Note: Do NOT include secrets here. Use the Render dashboard to add secret environment variables.
+      
+      
 
 services:
 - type: web
