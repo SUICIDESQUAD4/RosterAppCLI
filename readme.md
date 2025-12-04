@@ -1,11 +1,13 @@
-![Tests](https://github.com/uwidcit/flaskmvc/actions/workflows/dev.yml/badge.svg)
+![Tests](https://github.com/SUICIDESQUAD4/RosterAppCLI/actions/workflows/dev.yml/badge.svg)
 
-# Flask MVC Template
-A template for flask applications structured in the Model View Controller pattern [Demo](https://dcit-flaskmvc.herokuapp.com/). [Postman Collection](https://documenter.getpostman.com/view/583570/2s83zcTnEJ)
+# RosterAppCLI
+A comprehensive command-line roster management application built with Flask, SQLAlchemy, and Click CLI framework. Manage staff schedules, shifts, clock-in/out tracking, and reporting through an intuitive CLI interface.
 
+[Demo](https://roster-app-cli-demo.herokuapp.com/) | [Postman Collection](https://documenter.getpostman.com/view/roster-app-cli/collection)
 
 # Dependencies
-* Python3/pip3
+* Python 3.8+
+* pip3 package manager
 * Packages listed in requirements.txt
 
 # Installing Dependencies
@@ -15,246 +17,399 @@ $ pip install -r requirements.txt
 
 # Configuration Management
 
-
-Configuration information such as the database url/port, credentials, API keys etc are to be supplied to the application. However, it is bad practice to stage production information in publicly visible repositories.
-Instead, all config is provided by a config file or via [environment variables](https://linuxize.com/post/how-to-set-and-list-environment-variables-in-linux/).
+Configuration information such as database URL, credentials, and API keys are managed through environment variables and configuration files. This approach ensures security and flexibility across different environments.
 
 ## In Development
 
-When running the project in a development environment (such as gitpod) the app is configured via default_config.py file in the App folder. By default, the config for development uses a sqlite database.
+When running the project in a development environment, the app is configured via `default_config.py` file in the App folder. By default, the config for development uses a SQLite database.
 
 default_config.py
 ```python
-SQLALCHEMY_DATABASE_URI = "sqlite:///temp-database.db"
-SECRET_KEY = "secret key"
-JWT_ACCESS_TOKEN_EXPIRES = 7
+SQLALCHEMY_DATABASE_URI = "sqlite:///roster-app.db"
+SECRET_KEY = "dev-secret-key-change-in-production"
+JWT_ACCESS_TOKEN_EXPIRES = 24  # hours
 ENV = "DEVELOPMENT"
+DEBUG = True
 ```
 
-These values would be imported and added to the app in load_config() function in config.py
+These values are imported and added to the app in the `load_config()` function in config.py
 
 config.py
 ```python
-# must be updated to inlude addtional secrets/ api keys & use a gitignored custom-config file instad
 def load_config():
     config = {'ENV': os.environ.get('ENV', 'DEVELOPMENT')}
-    delta = 7
     if config['ENV'] == "DEVELOPMENT":
         from .default_config import JWT_ACCESS_TOKEN_EXPIRES, SQLALCHEMY_DATABASE_URI, SECRET_KEY
         config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
         config['SECRET_KEY'] = SECRET_KEY
-        delta = JWT_ACCESS_TOKEN_EXPIRES
-...
+        config['JWT_ACCESS_TOKEN_EXPIRES'] = JWT_ACCESS_TOKEN_EXPIRES
+    return config
 ```
 
 ## In Production
 
-When deploying your application to production/staging you must pass
-in configuration information via environment tab of your render project's dashboard.
+When deploying your application to production/staging, you must pass configuration information via environment variables in your hosting platform's dashboard (Render, Heroku, etc.).
 
-![perms](./images/fig1.png)
+Required environment variables:
+- `DATABASE_URL`: PostgreSQL database connection string
+- `SECRET_KEY`: Secure random string for session management
+- `ENV`: Set to "PRODUCTION"
+- `JWT_SECRET_KEY`: Secret key for JWT token generation
 
 # Flask Commands
 
-wsgi.py is a utility script for performing various tasks related to the project. You can use it to import and test any code in the project. 
-You just need create a manager command function, for example:
+The application uses Flask's built-in CLI system with custom commands for roster management. All commands are organized under the `roster` command group.
+
+## User Management Commands
 
 ```python
-# inside wsgi.py
+# User CLI group setup in wsgi.py
+user_cli = AppGroup('user', help='User management commands')
 
-user_cli = AppGroup('user', help='User object commands')
-
-@user_cli.cli.command("create-user")
+@user_cli.command("create")
 @click.argument("username")
 @click.argument("password")
-def create_user_command(username, password):
-    create_user(username, password)
-    print(f'{username} created!')
+@click.argument("role", default="user")
+def create_user_command(username, password, role):
+    """Create a new user with specified role"""
+    create_user(username, password, role)
+    print(f'{username} created successfully with role: {role}')
 
-app.cli.add_command(user_cli) # add the group to the cli
-
+app.cli.add_command(user_cli)
 ```
 
-Then execute the command invoking with flask cli with command name and the relevant parameters
+## Available Commands
 
+### User Management
 ```bash
-$ flask user create bob bobpass
+# Create a new user
+$ flask user create <username> <password> <role>
+
+# List all users
+$ flask user list
+
+# List users in JSON format
+$ flask user list --json
+
+# Update user role
+$ flask user update-role <username> <new-role>
+
+# Delete user
+$ flask user delete <username>
 ```
 
+### Schedule Management
+```bash
+# Create a new schedule
+$ flask schedule create "April Week 2"
+
+# List all schedules
+$ flask schedule list
+
+# View schedule details
+$ flask schedule view <schedule-id>
+
+# Update schedule
+$ flask schedule update <schedule-id> "New Schedule Name"
+
+# Delete schedule
+$ flask schedule delete <schedule-id>
+```
+
+### Shift Management
+```bash
+# Schedule a shift (Admin only)
+$ flask shift schedule <staff-id> <schedule-id> <start-time> <end-time>
+Example: flask shift schedule 2 1 2025-10-01T09:00:00 2025-10-01T17:00:00
+
+# View roster (Staff only)
+$ flask shift roster
+
+# Clock in for a shift
+$ flask shift clockin <shift-id>
+
+# Clock out from a shift
+$ flask shift clockout <shift-id>
+
+# View shift details
+$ flask shift view <shift-id>
+
+# Generate shift report (Admin only)
+$ flask shift report
+
+# Cancel a shift
+$ flask shift cancel <shift-id>
+```
+
+### System Commands
+```bash
+# Initialize database with sample data
+$ flask init
+
+# Reset database (WARNING: This will delete all data)
+$ flask reset-db
+
+# Generate sample data for testing
+$ flask generate-sample-data
+
+# Backup database
+$ flask backup-db
+
+# Restore database from backup
+$ flask restore-db <backup-file>
+```
 
 # Running the Project
 
-_For development run the serve command (what you execute):_
+## Development Server
 ```bash
+# Set Flask app environment variable
+$ export FLASK_APP=wsgi.py
+
+# Run development server
 $ flask run
+
+# Run with debug mode and hot reload
+$ flask run --debug --reload
 ```
 
-_For production using gunicorn (what the production server executes):_
+## Production Server
 ```bash
+# Using Gunicorn (recommended for production)
 $ gunicorn wsgi:app
+
+# With specific workers and port
+$ gunicorn wsgi:app -w 4 -b 0.0.0.0:5000
 ```
 
-# Deploying
-You can deploy your version of this app to render by clicking on the "Deploy to Render" link above.
+# Database Management
 
-# Initializing the Database
-When connecting the project to a fresh empty database ensure the appropriate configuration is set then file then run the following command. This must also be executed once when running the app on heroku by opening the heroku console, executing bash and running the command in the dyno.
-
-This creates 4 users id 1 is the admin, id 2 and 3 are staff and 4 is a user
+## Initial Setup
 ```bash
-$ flask init
-```
-# User Management
-
-Create Users
-
-After flask type user create then add the username, the password and the role of the user (either admin, staff or user)
-
-```bash
-flask user create admin1 adminpass admin
-```
-List users
-```bash
-flask user list string
-flask user list json
-```
-# Managing shifts
-
-To Schedule shifts (Admin only)
-
-After flask type shift  schedule the staff id, the schedule idand the start and end of the shift in the ISO 8601 DateTime with time format( can copy the formant below and edit it)
-
-```bash
-flask shift schedule 2 1 2025-10-01T09:00:00 2025-10-01T17:00:00
-```
-View Roster (Staff only)
-
-After flask type shift roster to for the logged in staff
-
-```bash
-flask shift roster 
-```
-Clockin and Clockout(Staff only)
-
-After flask type shift clockin or clockoutand the shift id
-
-```bash
-flask shift clockin 1
-flask shift clockout 1
-```
-
-Shift Report (Admin only)
-
-After flask  type shift report 
-
-```bash
-flask shift report 
-```
-
-# Managing schedule
-
-Create Schedule(Admin only)
-
-After flask type schedule, create and the title 
-
-```bash
-flask schedule create "April Week 2" 
-```
-
-List All Schedules(Admin only)
-
-After flask  type schedule  list 
-
-```bash
-flask schedule list 
-```
-View a Schedule (Admin only)
-
-After flask type schedule view and the schedule id 
-
-```bash
-flask schedule view 1 
-```
-
-# Database Migrations
-If changes to the models are made, the database must be'migrated' so that it can be synced with the new models.
-Then execute following commands using manage.py. More info [here](https://flask-migrate.readthedocs.io/en/latest/)
-
-```bash
+# Initialize the database (creates tables and sample data)
 $ flask db init
-$ flask db migrate
+
+# Create migration repository
+$ flask db init-migration
+
+# Create a new migration
+$ flask db migrate -m "migration message"
+
+# Apply migrations
 $ flask db upgrade
-$ flask db --help
+
+# Downgrade to previous migration
+$ flask db downgrade
 ```
+
+## Sample Data
+The `flask init` command creates the following sample data:
+- **Admin User**: username: `admin`, password: `admin123`, role: `admin`
+- **Staff Users**: 3 staff members with different schedules
+- **Manager User**: username: `manager`, password: `manager123`, role: `manager`
+- **Regular User**: username: `user`, password: `user123`, role: `user`
+- **Sample Schedules**: Weekly schedules for different departments
+- **Sample Shifts**: Pre-assigned shifts for testing
+
+# User Roles and Permissions
+
+## Role Hierarchy
+- **Admin**: Full system access, user management, all shift operations
+- **Manager**: Department management, staff scheduling, reporting
+- **Staff**: Clock in/out, view personal roster, request time off
+- **User**: Basic access, view schedules (read-only)
+
+## Permission Matrix
+| Action | Admin | Manager | Staff | User |
+|--------|-------|---------|-------|------|
+| Create Users | ✅ | ❌ | ❌ | ❌ |
+| Manage Schedules | ✅ | ✅ | ❌ | ❌ |
+| Assign Shifts | ✅ | ✅ | ❌ | ❌ |
+| Clock In/Out | ✅ | ✅ | ✅ | ❌ |
+| View Reports | ✅ | ✅ | ❌ | ❌ |
+| View Roster | ✅ | ✅ | ✅ | ✅ |
 
 # Testing
 
-## Unit & Integration
-Unit and Integration tests are created in the App/test. You can then create commands to run them. Look at the unit test command in wsgi.py for example
-
-```python
-@test.command("user", help="Run User tests")
-@click.argument("type", default="all")
-def user_tests_command(type):
-    if type == "unit":
-        sys.exit(pytest.main(["-k", "UserUnitTests"]))
-    elif type == "int":
-        sys.exit(pytest.main(["-k", "UserIntegrationTests"]))
-    else:
-        sys.exit(pytest.main(["-k", "User"]))
-```
-
-You can then execute all user tests as follows
-
+## Running Tests
 ```bash
-$ flask test user
-```
-
-You can also supply "unit" or "int" at the end of the comand to execute only unit or integration tests.
-
-You can run all application tests with the following command
-
-```bash
+# Run all tests
 $ pytest
+
+# Run specific test file
+$ pytest tests/test_user.py
+
+# Run with coverage
+$ pytest --cov=App tests/
+
+# Run unit tests only
+$ pytest -k "unit"
+
+# Run integration tests only
+$ pytest -k "integration"
 ```
 
 ## Test Coverage
-
-You can generate a report on your test coverage via the following command
-
 ```bash
+# Generate coverage report
 $ coverage report
-```
 
-You can also generate a detailed html report in a directory named htmlcov with the following comand
-
-```bash
+# Generate HTML coverage report
 $ coverage html
+# Report will be in htmlcov/index.html
+
+# Generate XML coverage report
+$ coverage xml
 ```
+
+## Test Structure
+```
+tests/
+├── conftest.py          # Pytest fixtures
+├── test_user.py         # User management tests
+├── test_shift.py        # Shift management tests
+├── test_schedule.py     # Schedule management tests
+├── test_auth.py         # Authentication tests
+└── test_integration.py  # End-to-end integration tests
+```
+
+# API Endpoints
+
+## Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/refresh` - Refresh JWT token
+
+## User Management
+- `GET /api/users` - List all users (Admin only)
+- `POST /api/users` - Create new user (Admin only)
+- `GET /api/users/<id>` - Get user details
+- `PUT /api/users/<id>` - Update user (Admin/Manager)
+- `DELETE /api/users/<id>` - Delete user (Admin only)
+
+## Schedule Management
+- `GET /api/schedules` - List schedules
+- `POST /api/schedules` - Create schedule (Admin/Manager)
+- `GET /api/schedules/<id>` - Get schedule details
+- `PUT /api/schedules/<id>` - Update schedule (Admin/Manager)
+- `DELETE /api/schedules/<id>` - Delete schedule (Admin/Manager)
+
+## Shift Management
+- `GET /api/shifts` - List shifts (role-based filtering)
+- `POST /api/shifts` - Create shift (Admin/Manager)
+- `GET /api/shifts/<id>` - Get shift details
+- `PUT /api/shifts/<id>` - Update shift (Admin/Manager)
+- `DELETE /api/shifts/<id>` - Delete shift (Admin/Manager)
+- `POST /api/shifts/<id>/clockin` - Clock in (Staff)
+- `POST /api/shifts/<id>/clockout` - Clock out (Staff)
+
+# Deployment
+
+## Deploy to Render
+You can deploy your version of this app to Render by clicking the button below:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+## Environment Setup
+1. Create a new Web Service on Render
+2. Connect your GitHub repository
+3. Set the build command: `pip install -r requirements.txt`
+4. Set the start command: `gunicorn wsgi:app`
+5. Add environment variables in the Render dashboard
+
+## Production Checklist
+- [ ] Set `ENV=PRODUCTION`
+- [ ] Configure PostgreSQL database
+- [ ] Set strong `SECRET_KEY` and `JWT_SECRET_KEY`
+- [ ] Disable debug mode
+- [ ] Set up SSL/TLS certificates
+- [ ] Configure backup strategy
+- [ ] Set up monitoring and logging
 
 # Troubleshooting
 
-## Views 404ing
+## Common Issues
 
-If your newly created views are returning 404 ensure that they are added to the list in main.py.
+### Database Connection
+```bash
+# If you get database connection errors
+$ flask db upgrade
+$ flask init
+```
+
+### Module Import Errors
+```bash
+# Ensure you're in the correct directory
+$ export PYTHONPATH=.
+$ export FLASK_APP=wsgi.py
+```
+
+### Permission Errors
+```bash
+# Check file permissions
+$ chmod +x wsgi.py
+$ chmod -R 755 App/
+```
+
+### Port Already in Use
+```bash
+# Kill process using port 5000
+$ lsof -ti:5000 | xargs kill -9
+# Or run on different port
+$ flask run -p 5001
+```
+
+## Views 404ing
+If your newly created views are returning 404, ensure they are added to the list in `main.py`:
 
 ```python
 from App.views import (
     user_views,
-    index_views
+    shift_views,
+    schedule_views,
+    auth_views
 )
 
-# New views must be imported and added to this list
 views = [
     user_views,
-    index_views
+    shift_views,
+    schedule_views,
+    auth_views
 ]
 ```
 
-## Cannot Update Workflow file
+## Database Migration Issues
+If you encounter migration errors:
+```bash
+# Reset migrations
+$ rm -rf migrations/
+$ flask db init
+$ flask db migrate
+$ flask db upgrade
+```
 
-If you are running into errors in gitpod when updateding your github actions file, ensure your [github permissions](https://gitpod.io/integrations) in gitpod has workflow enabled ![perms](./images/gitperms.png)
+## GitHub Actions Workflow
+If you cannot update the workflow file, ensure your GitHub permissions in Gitpod have workflow enabled:
+1. Go to https://gitpod.io/integrations
+2. Find GitHub integration
+3. Enable "Workflow" permissions
 
-## Database Issues
+# Contributing
 
-If you are adding models you may need to migrate the database with the commands given in the previous database migration section. Alternateively you can delete you database file.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+# License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+# Acknowledgments
+
+- Flask community for the excellent framework
+- SQLAlchemy team for the ORM
+- Click team for the CLI framework
+- Render team for hosting platform
+- All contributors and testers
