@@ -1,29 +1,129 @@
 {
 	"info": {
-		"_postman_id": "982ba4f2-1a0e-43bc-803b-5217c9831e62",
-		"name": "RosterAPI",
+		"_postman_id": "61f971ac-9341-4d98-a56f-4d8728a6a26c",
+		"name": "Final_Project_API_Collection",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "20616724",
-		"_collection_link": "https://manutd-3640.postman.co/workspace/ManUtd-Workspace~2fb3167d-d7e4-4b28-a65f-08d0dd95df9b/collection/20616724-982ba4f2-1a0e-43bc-803b-5217c9831e62?action=share&source=collection_link&creator=20616724"
+		"_exporter_id": "42705170",
+		"_collection_link": "https://suicidesquad4.postman.co/workspace/SUICIDESQUAD4_API_TESTING~92c96ece-1296-4ec3-9d80-79ac751b8793/collection/34109346-61f971ac-9341-4d98-a56f-4d8728a6a26c?action=share&source=collection_link&creator=42705170"
 	},
 	"item": [
 		{
-			"name": "Admin Operations",
+			"name": "System Requests",
 			"item": [
 				{
-					"name": "Login",
+					"name": "Initialize App",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Invalid Login Credentials (Unauthorized)\")"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/system/init",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"system",
+								"init"
+							]
+						},
+						"description": "This request initializes the application system by calling the /system/init endpoint. It is used to set up or reset the application's state before further operations. The request expects a 200 OK status code response to confirm successful initialization."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Authentication Requests",
+			"item": [
+				{
+					"name": "Invalid Login Credentials (Unauthorized)",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"// js code to save the access_token for user authentication\r",
-									"let jsonData = JSON.parse(responseBody);\r",
-									"pm.environment.set(\"access_token\",jsonData.access_token) // creates access_token variable in postman and sets it to the value of the access_token in the response body."
+									"pm.test(\"Invalid credentials are rejected\", function () {\r",
+									"    pm.response.to.have.status(401);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Authentication failure message returned\", function () {\r",
+									"    pm.expect(pm.response.text()).to.match(/bad|invalid|unauthorized|password/i);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Admin Login\");"
 								],
 								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"jane\",\r\n  \"password\": \"bobpass\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Admin Clock In (Forbidden)\")"
+								],
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -40,182 +140,280 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/api/login",
+							"raw": "{{baseUrl}}/api/auth/login",
 							"host": [
-								"{{host}}"
+								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"auth",
 								"login"
 							]
-						}
+						},
+						"description": "This endpoint authenticates an admin user by accepting a username and password in the request body. On successful authentication, it returns a 200 status code. Use this endpoint to log in as an admin and obtain access to protected admin features."
 					},
 					"response": []
 				},
 				{
-					"name": "Admin: Create_Schedule",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n \"scheduleName\": \"Morning Shift\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
+					"name": "Admin Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Staff Schedule Shift (Unauthorized)\")"
+								],
+								"type": "text/javascript",
+								"packages": {}
 							}
-						},
-						"url": {
-							"raw": "{{host}}/createSchedule",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"createSchedule"
-							]
 						}
-					},
-					"response": []
-				},
-				{
-					"name": "Admin: Create_Shift",
+					],
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"scheduleID\": 1,\r\n    \"staffID\": 3,\r\n    \"start_time\": \"2025-10-24T09:00:00\",\r\n    \"end_time\": \"2025-10-24T17:00:00\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{host}}/createShift",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"createShift"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Admin: Shift_Report",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n  \"shiftID\": 1\r\n}"
-						},
-						"url": {
-							"raw": "{{host}}/shiftReport",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"shiftReport"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Logout",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/logout",
+							"raw": "{{baseUrl}}/api/auth/logout",
 							"host": [
-								"{{host}}"
+								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"auth",
 								"logout"
 							]
+						},
+						"description": "Logs out a staff user from the system. This POST request invalidates the current session or authentication token for the staff member, ensuring they are securely signed out. No request body is required. A successful response indicates the user has been logged out."
+					},
+					"response": []
+				},
+				{
+					"name": "Staff Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"View Roster\")"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"jane\",\r\n    \"password\": \"janepass\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "This POST endpoint allows staff members to log in by submitting their username and password in the request body. On successful login, the API responds with a status code 200. Use this endpoint to authenticate staff users and initiate their session."
+					},
+					"response": []
+				},
+				{
+					"name": "Staff Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(null)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Logs out a staff user from the system. This POST request invalidates the current session or authentication token for the staff member, ensuring they are securely signed out. No request body is required. A successful response indicates the user has been logged out."
 					},
 					"response": []
 				}
 			]
 		},
 		{
-			"name": "Staff Operations",
+			"name": "Admin Requests",
 			"item": [
 				{
-					"name": "Login",
+					"name": "Schedule Shift",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"// js code to save the access_token for user authentication\r",
-									"let jsonData = JSON.parse(responseBody);\r",
-									"pm.environment.set(\"access_token\",jsonData.access_token) // creates access_token variable in postman and sets it to the value of the access_token in the response body."
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Auto Schedule Without Method (Bad Request)\")"
 								],
 								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"staffID\": 2,\r\n    \"scheduleID\": 1,\r\n    \"start_time\": \"2025-01-29T09:00:00\",\r\n    \"end_time\": \"2025-01-29T17:00:00\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
 							}
 						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/schedule_shift",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"schedule_shift"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Auto Schedule",
+					"event": [
 						{
-							"listen": "prerequest",
+							"listen": "test",
 							"script": {
 								"exec": [
-									""
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"View Schedule\")"
 								],
 								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"scheduleID\": 1,\r\n    \"methodType\": \"even\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/autoSchedule",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"autoSchedule"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "View Schedule",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"View Shift\")"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/viewSchedule",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"viewSchedule"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "View Shift",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Admin Logout\")"
+								],
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -227,7 +425,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"username\": \"alice\",\r\n    \"password\": \"alicepass\"\r\n}",
+							"raw": "{\r\n    \"shiftID\":1\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -235,136 +433,43 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/api/login",
+							"raw": "{{baseUrl}}/api/admin/viewShift",
 							"host": [
-								"{{host}}"
+								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
-								"login"
+								"admin",
+								"viewShift"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Staff: Show_Roster",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{host}}/staff/roster",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"staff",
-								"roster"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getShift",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"shiftID\": 1\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
+					"name": "Admin Clock In (Forbidden)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 403 or 401\", function () {\r",
+									"    pm.expect([401,403]).to.include(pm.response.code);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Error message exists\", function () {\r",
+									"    const json = pm.response.json();\r",
+									"    pm.expect(json).to.have.property(\"error\");\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Schedule Shift\");"
+								],
+								"type": "text/javascript",
+								"packages": {}
 							}
-						},
-						"url": {
-							"raw": "{{host}}/staff/shift",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"staff",
-								"shift"
-							]
 						}
-					},
-					"response": []
-				},
-				{
-					"name": "Staff: Clock_In",
+					],
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"shiftID\": 1\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{host}}/staff/clock_in",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"staff",
-								"clock_in"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Staff: Clock_Out",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -377,41 +482,247 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/staff/clock_out",
+							"raw": "{{baseUrl}}/api/staff/clock_in",
 							"host": [
-								"{{host}}"
+								"{{baseUrl}}"
 							],
 							"path": [
+								"api",
 								"staff",
-								"clock_out"
+								"clock_in"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Logout",
+					"name": "Auto Schedule Without Method (Bad Request)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Auto schedule rejected when prerequisites are not met\", function () {\r",
+									"    pm.expect([400, 401, 403]).to.include(pm.response.code);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Rejection reason present\", function () {\r",
+									"    pm.expect(pm.response.text()).to.match(/method|missing|required|unauthorized|not authorized/i);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Auto Schedule\");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"scheduleID\": 1\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{host}}/api/logout",
+							"raw": "{{baseUrl}}/api/admin/autoSchedule",
 							"host": [
-								"{{host}}"
+								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
-								"logout"
+								"admin",
+								"autoSchedule"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Staff Requests",
+			"item": [
+				{
+					"name": "View Roster",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Clock In\")"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/staff/roster",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								"roster"
+							]
+						},
+						"description": "Retrieves the current staff roster. This GET request returns a list of all staff members scheduled for work, including their names, roles, and assigned shifts. Use this endpoint to view the up-to-date roster for staffing and scheduling purposes. No request body is required. Ensure the 'baseUrl' variable is set to the correct API environment."
+					},
+					"response": []
+				},
+				{
+					"name": "Clock In",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Clock Out\")"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"shiftID\": 1\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/staff/clock_in",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								"clock_in"
+							]
+						},
+						"description": "**Purpose:**\nThis endpoint records the time a staff member clocks in for a specific shift.\n\n**Path Variable:**\n- `shift_id` (required): The unique identifier of the shift for which the staff member is clocking in.\n\n**Request Body:**\n- `timestamp` (string, required): The date and time when the staff member clocks in, in ISO 8601 format (e.g., \"2025-10-04T11:15:00\").\n\nUse this endpoint to mark the start time of a staff member's shift."
+					},
+					"response": []
+				},
+				{
+					"name": "Clock Out",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Staff Logout\")"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"shiftID\": 1\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/staff/clock_out",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								"clock_out"
+							]
+						},
+						"description": "This POST endpoint allows staff to record their time-out for a specific shift.\n\n- **Path Variable:** `shift_id` (required) — The unique identifier of the shift to time out from.\n- **Request Body:** Requires a JSON object with a `timestamp` field (ISO 8601 format) indicating the time of time-out.\n  \n  Example:\n  ```json\n  {\n    \"timestamp\": \"2025-10-04T18:45:00\"\n  }\n  ```\n- **Response:** On success, returns HTTP 200 status code confirming the time-out was recorded."
+					},
+					"response": []
+				},
+				{
+					"name": "Staff Schedule Shift (Unauthorized)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401 Unauthorized or 403 Forbidden\", function () {\r",
+									"    // Asserting the correct security status code, not 404 or 500\r",
+									"    pm.expect([401, 403]).to.include(pm.response.code);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Authorization error message is present in response body\", function () {\r",
+									"    const responseText = pm.response.text();\r",
+									"    \r",
+									"    // We check the raw text for the expected authorization keywords,\r",
+									"    // since the server is returning HTML instead of JSON.\r",
+									"    pm.expect(responseText).to.be.a('string');\r",
+									"    pm.expect(responseText).to.match(/unauthorized|forbidden|access denied|Missing JWT|401/i);\r",
+									"});\r",
+									"\r",
+									"pm.execution.setNextRequest(\"Staff Login\");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"staffID\": 2,\r\n  \"scheduleID\": 1,\r\n  \"start_time\": \"2025-01-29T09:00:00\",\r\n  \"end_time\": \"2025-01-29T17:00:00\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/schedule_shift",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"schedule_shift"
 							]
 						}
 					},
@@ -446,8 +757,13 @@
 	],
 	"variable": [
 		{
-			"key": "host",
+			"key": "baseUrl",
 			"value": ""
+		},
+		{
+			"key": "local_url",
+			"value": "",
+			"disabled": true
 		}
 	]
 }
